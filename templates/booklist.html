@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Books Reviews
+{% endblock %}
+
+{% block body %}
+    <h1>Book Search Result</h1>
+    <ul>
+    {% for book in booklist %}
+        <li>{{ book.isbn }}</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
