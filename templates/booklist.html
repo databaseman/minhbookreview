@@ -8,7 +8,7 @@
     <h1>Book Search Result</h1>
     <ul>
     {% for book in booklist %}
-        <li>{{ book.isbn }}</li>
+        <li>{{ book.isbn }}, {{book.title}}, {{book.author}}</li>
     {% endfor %}
 </ul>
 

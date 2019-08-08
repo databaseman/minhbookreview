@@ -61,14 +61,27 @@ CREATE TABLE books (
     deleted  DATE DEFAULT NULL
 );
 
+CREATE TABLE reviews (
+    isbn     VARCHAR NOT NULL,
+    email    VARCHAR NOT NULL,
+    review   VARCHAR,
+    rating   SMALLINT NOT NULL,
+    created  DATE NOT NULL DEFAULT NOW(),
+    updated   DATE NOT NULL DEFAULT NOW(),
+    deleted  DATE DEFAULT NULL,
+    PRIMARY KEY (isbn, email)
+);
+
 bookreview=# \d
-            List of relations
- Schema |     Name     |   Type   | Owner
---------+--------------+----------+-------
- public | books        | table    | shine
- public | users        | table    | shine
- public | users_id_seq | sequence | shine
-(3 rows)
+List of relations
+Schema |       Name        |   Type   | Owner
+--------+-------------------+----------+-------
+public | books             | table    | shine
+public | reviews           | table    | shine
+public | users             | table    | shine
+public | users_id_seq      | sequence | shine
+(4 rows)
+
 
 bookreview=# \d books
                      Table "public.books"
@@ -96,6 +109,20 @@ bookreview=# \d users
  deleted  | date              |           |          |
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
+
+    bookreview=# \d reviews
+                    Table "public.reviews"
+ Column  |       Type        | Collation | Nullable | Default
+---------+-------------------+-----------+----------+---------
+ isbn    | character varying |           | not null |
+ email   | character varying |           | not null |
+ review  | character varying |           |          |
+ rating  | smallint          |           | not null |
+ created | date              |           | not null | now()
+ updated | date              |           | not null | now()
+ deleted | date              |           |          |
+Indexes:
+    "reviews_pkey" PRIMARY KEY, btree (isbn, email)
 
 export DATABASE_URL=postgres://shine:shine@localhost/bookreview
 export FLASK_APP=application.py
