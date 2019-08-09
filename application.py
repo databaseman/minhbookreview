@@ -1,4 +1,4 @@
-import os
+import os, requests
 
 from flask import Flask, render_template, request, redirect, session, url_for
 from flask_session import Session
@@ -13,6 +13,8 @@ Session(app)
 
 engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
+goodReadsUrl='https://www.goodreads.com/book/review_counts.json'
+goodReadKey="R8JVn8Vq2SAR2QIjGgCEtg"
 
 @app.route("/")
 def index():
@@ -62,6 +64,15 @@ def book(isbn):
         session["message"]="No Local Reviews. "
     else:
         session["message"]='Local Reviews'
-    header={'isbn': isbn, 'title': lBookReviews[0].title, 'author': lBookReviews[0].author, 'year': lBookReviews[0].year}
+
     # Get info from Good Read
+    gBookReviews=requests.get(goodReadsUrl, params={"key": goodReadKey, "isbns": isbn})
+    if gBookReviews.status_code == 404:
+        session["message"]=session["message"]+"No response from Goodreads"
+    else:
+        average_rating=gBookReviews.json()['books'][0]['average_rating']
+        ratings_count=gBookReviews.json()['books'][0]['ratings_count']
+
+    header={'isbn': isbn, 'title': lBookReviews[0].title, 'author': lBookReviews[0].author, 'year': lBookReviews[0].year,
+            'average_rating': average_rating, 'ratings_count': ratings_count}
     return render_template( "book.html", lBookReviews=lBookReviews, header=header, message=session.get("message") )

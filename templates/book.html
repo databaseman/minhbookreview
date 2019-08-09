@@ -5,14 +5,14 @@
 {% endblock %}
 
 {% block body %}
-    <h3>  ISBN: {{header["isbn"]}}</h3>
-    <h3> Title: {{header["title"]}}</h3>
-    <h3>Author: {{header["author"]}}</h3>
-    <h3>  Year: {{header["year"]}}</h3>
+    <h3>ISBN: {{header["isbn"]}}  Title: {{header["title"]}}  Author: {{header["author"]}}  Year: {{header["year"]}}</h3>
+    <h4>Goodreads Avg Rating of {{header["average_rating"]}}  out of {{'{:,}'.format(header["ratings_count"])}} rating</h4>
     <h5>{{message}}</h5>
     <ul>
-        {% for review in lBookReviews %}
-            <li>{{review["updated"]}}, {{review["email"]}}, {{review["rating"]}}, {{review["review"]}}</li>
-        {% endfor %}
+        {% if lBookReviews[0].email is not none %}
+            {% for review in lBookReviews %}
+                <li>{{review["updated"]}}, {{review["email"]}}, {{review["rating"]}}, {{review["review"]}}</li>
+            {% endfor %}
+        {% endif %}
     </ul>
 {% endblock %}
