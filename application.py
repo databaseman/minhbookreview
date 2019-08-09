@@ -16,9 +16,10 @@ db = scoped_session(sessionmaker(bind=engine))
 goodReadsUrl='https://www.goodreads.com/book/review_counts.json'
 goodReadKey="R8JVn8Vq2SAR2QIjGgCEtg"
 
+
 @app.route("/")
 def index():
-    if session.get("user_id") is None:
+    if session.get("email") is None:
         return render_template( "authenticate.html", message=session.get("message") )
     else:
         return render_template("booksearch.html")
@@ -32,7 +33,7 @@ def authenticate():
         if (user is None):
             session["message"]="No such user / invalid password."
         else:
-            session["user_id"] = user.id
+            session["email"] = user.email
     else: #Register
         user=db.execute("SELECT * FROM users WHERE email = :email", {"email": email}).fetchone()
         if (user is not None):
@@ -56,8 +57,18 @@ def booksearch():
         session["message"]=''
     return render_template("booklist.html", booklist=booklist, message=session["message"])
 
-@app.route("/book/<string:isbn>")
+@app.route("/book/<string:isbn>", methods=["GET", "POST"])
 def book(isbn):
+    if session.get("email") is None:
+        return render_template( "authenticate.html", message="Please log in" )
+
+    if request.method == "POST":
+        rating = request.form.get("rating")
+        review = request.form.get("review")
+        db.execute("INSERT INTO reviews (isbn, email, rating, review) VALUES (:isbn, :email, :rating, :review)",
+                   {"isbn": isbn, "email": session["email"], "rating": rating, "review": review})
+        db.commit()
+
     # Get info from local DATABASE
     lBookReviews=db.execute("SELECT b.isbn, b.title, b.author, b.year, r.email, r.review, r.rating, r.updated FROM books b LEFT JOIN reviews r ON (b.isbn=r.isbn) WHERE (b.isbn = :isbn)", {"isbn": isbn}).fetchall()
     if (lBookReviews[0].email==None):

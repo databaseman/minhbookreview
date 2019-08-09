@@ -7,6 +7,22 @@
 {% block body %}
     <h3>ISBN: {{header["isbn"]}}  Title: {{header["title"]}}  Author: {{header["author"]}}  Year: {{header["year"]}}</h3>
     <h4>Goodreads Avg Rating of {{header["average_rating"]}}  out of {{'{:,}'.format(header["ratings_count"])}} rating</h4>
+
+    <form action="{{url_for('book', isbn=header["isbn"])}}" method="post">
+        <div class="form-group">
+            <input type="number" min="0" max="10" class="form-control" name="rating" placeholder="Rating 1 to 5" required>
+        </div>
+        <div class="form-group">
+            <input type="text" class="form-control" name="review" placeholder="Review" required>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <button type ="submit" name="action" value="submit" class="btn btn-primary btn-md">Submit</button>
+            </div>
+        </div>
+    </form>
+
     <h5>{{message}}</h5>
     <ul>
         {% if lBookReviews[0].email is not none %}
@@ -15,4 +31,6 @@
             {% endfor %}
         {% endif %}
     </ul>
+
+
 {% endblock %}
