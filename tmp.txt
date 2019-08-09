@@ -1,0 +1,9 @@
+SELECT * FROM books b LEFT JOIN reviews r ON (b.isbn=r.isbn) WHERE (b.isbn = '006053284X');
+
+INSERT INTO reviews (isbn, email, rating, review) VALUES ('006053284X', 'nguyen_ba_minh@yahoo.com', 1, 'sucks!');
+INSERT INTO reviews (isbn, email, rating, review) VALUES ('006053284X', 'user1@yahoo.com', 2, 'ok!');
+INSERT INTO reviews (isbn, email, rating, review) VALUES ('006053284X', 'user2@yahoo.com', 3, 'not bad!');
+
+import requests
+res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "R8JVn8Vq2SAR2QIjGgCEtg", "isbns": "9781632168146"})
+print(res.json())

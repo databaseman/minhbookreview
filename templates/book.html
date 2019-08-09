@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Books Reviews
+{% endblock %}
+
+{% block body %}
+    <h3>  ISBN: {{header["isbn"]}}</h3>
+    <h3> Title: {{header["title"]}}</h3>
+    <h3>Author: {{header["author"]}}</h3>
+    <h3>  Year: {{header["year"]}}</h3>
+    <h5>{{message}}</h5>
+    <ul>
+        {% for review in lBookReviews %}
+            <li>{{review["updated"]}}, {{review["email"]}}, {{review["rating"]}}, {{review["review"]}}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -48,4 +48,20 @@ def booksearch():
     author=request.form.get("author")+'%'
     booklist=db.execute("SELECT * FROM books WHERE (isbn like :isbn) and (title like :title) and (author like :author)",
                          {"isbn": isbn, "title": title, "author": author}).fetchall()
-    return render_template("booklist.html", booklist=booklist)
+    if (booklist == []):
+        session["message"]="Selection Not found. isbn:{} title:{} author:{}".format(isbn, title, author)
+    else:
+        session["message"]=''
+    return render_template("booklist.html", booklist=booklist, message=session["message"])
+
+@app.route("/book/<string:isbn>")
+def book(isbn):
+    # Get info from local DATABASE
+    lBookReviews=db.execute("SELECT b.isbn, b.title, b.author, b.year, r.email, r.review, r.rating, r.updated FROM books b LEFT JOIN reviews r ON (b.isbn=r.isbn) WHERE (b.isbn = :isbn)", {"isbn": isbn}).fetchall()
+    if (lBookReviews[0].email==None):
+        session["message"]="No Local Reviews. "
+    else:
+        session["message"]='Local Reviews'
+    header={'isbn': isbn, 'title': lBookReviews[0].title, 'author': lBookReviews[0].author, 'year': lBookReviews[0].year}
+    # Get info from Good Read
+    return render_template( "book.html", lBookReviews=lBookReviews, header=header, message=session.get("message") )
