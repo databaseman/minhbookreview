@@ -123,10 +123,6 @@ def book(isbn):
 
     # Get info from local DATABASE
     lBookReviews=db.execute("SELECT b.isbn, b.title, b.author, b.year, r.email, r.review, r.rating, r.updated FROM books b LEFT JOIN reviews r ON (b.isbn=r.isbn) WHERE (b.isbn = :isbn)", {"isbn": isbn}).fetchall()
-    if (lBookReviews[0].email==None):
-        session["message"]="No Local Reviews. "
-    else:
-        session["message"]=''
 
     # Get info from Goodreads
     gBookReviews=requests.get(goodReadsUrl, params={"key": goodReadKey, "isbns": isbn})
