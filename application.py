@@ -1,6 +1,49 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Purpose: Book Reviews
+
+Input for Web:
+    ISBN/ Title / Author for search criterias
+    Rating & Review for books (only 1 review per user per book)
+
+Output for Web:
+    ISBN + Title + Author + Published Year + Reviews +
+    GoodReads average ratings & counts
+
+Input for API:
+    ISBN
+
+Output for API:
+    {
+        "title": "Memory",
+        "author": "Doug Lloyd",
+        "year": 2015,
+        "isbn": "1632168146",
+        "review_count": 28,
+        "average_score": 5.0
+    }
+
+Usage:
+    export DATABASE_URL=postgres://shine:shine@localhost/bookreview
+    export FLASK_APP=application.py
+    export FLASK_DEBUG=1
+    $ python application.py
+    http://127.0.0.1:5000/  #require login with an account
+    http://127.0.0.1:5000/api/<ISBN>  #no login needed
+
+Notes:
+    DB 'bookreview' is local Postgres.
+    DB and Tables are under the 'shine' user.
+    Info about the users/books/reviews tables are in the create_tables.sql
+    books table was imported using the import.py and books.csv files
+
+History:
+    08/13/2019 Minh Nguyen    Created
+"""
 import os, requests
 
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -19,6 +62,7 @@ goodReadKey="R8JVn8Vq2SAR2QIjGgCEtg"
 
 @app.route("/")
 def index():
+    # User must log in before able to do book search
     if session.get("email") is None:
         return render_template( "authenticate.html", message=session.get("message") )
     else:
@@ -26,6 +70,7 @@ def index():
 
 @app.route("/authentication", methods=["POST"])
 def authenticate():
+    # User can log in or register as new user
     email=request.form.get("email")
     password=request.form.get("password")
     if request.form.get("action") == 'Login':
@@ -33,6 +78,7 @@ def authenticate():
         if (user is None):
             session["message"]="No such user / invalid password."
         else:
+            session["message"]=''
             session["email"] = user.email
     else: #Register
         user=db.execute("SELECT * FROM users WHERE email = :email", {"email": email}).fetchone()
@@ -59,14 +105,20 @@ def booksearch():
 
 @app.route("/book/<string:isbn>", methods=["GET", "POST"])
 def book(isbn):
-    if session.get("email") is None:
+    email=session.get("email")
+    if  email is None:
         return render_template( "authenticate.html", message="Please log in" )
 
     if request.method == "POST":
         rating = request.form.get("rating")
         review = request.form.get("review")
-        db.execute("INSERT INTO reviews (isbn, email, rating, review) VALUES (:isbn, :email, :rating, :review)",
-                   {"isbn": isbn, "email": session["email"], "rating": rating, "review": review})
+        #Only 1 review per user is allow
+        if (db.execute("SELECT * FROM reviews WHERE isbn=:isbn AND email=:email", {"isbn": isbn, "email": email}).rowcount == 0):
+            db.execute("INSERT INTO reviews (isbn, email, rating, review) VALUES (:isbn, :email, :rating, :review)",
+                       {"isbn": isbn, "email": email, "rating": rating, "review": review})
+        else:
+            db.execute("UPDATE reviews SET rating=:rating, review=:review, updated=now() WHERE isbn=:isbn AND email=:email",
+                       {"isbn": isbn, "email": email, "rating": rating, "review": review})
         db.commit()
 
     # Get info from local DATABASE
@@ -74,16 +126,41 @@ def book(isbn):
     if (lBookReviews[0].email==None):
         session["message"]="No Local Reviews. "
     else:
-        session["message"]='Local Reviews'
+        session["message"]=''
 
-    # Get info from Good Read
+    # Get info from Goodreads
     gBookReviews=requests.get(goodReadsUrl, params={"key": goodReadKey, "isbns": isbn})
-    if gBookReviews.status_code == 404:
-        session["message"]=session["message"]+"No response from Goodreads"
+    if gBookReviews.status_code != 200:
+        session["message"]=session["message"]+"Problem with Goodreads. Status Code: "+str(gBookReviews.status_code)
     else:
+        session["message"]=''
         average_rating=gBookReviews.json()['books'][0]['average_rating']
         ratings_count=gBookReviews.json()['books'][0]['ratings_count']
 
     header={'isbn': isbn, 'title': lBookReviews[0].title, 'author': lBookReviews[0].author, 'year': lBookReviews[0].year,
             'average_rating': average_rating, 'ratings_count': ratings_count}
     return render_template( "book.html", lBookReviews=lBookReviews, header=header, message=session.get("message") )
+
+@app.route("/api/<string:isbn>")
+def book_api(isbn):
+    # Get info from local DATABASE
+    lBook=db.execute("SELECT isbn, title, author, year FROM books WHERE (isbn = :isbn)", {"isbn": isbn}).fetchone()
+    if (lBook is None):
+        return jsonify({"error": "Invalid ISBN"}), 422
+
+    # Get info from Good Read
+    gBookReviews=requests.get(goodReadsUrl, params={"key": goodReadKey, "isbns": isbn})
+    if gBookReviews.status_code != 200:
+        session["message"]=session["message"]+"Problem with Goodreads. Status Code: "+str(gBookReviews.status_code)
+    else:
+        average_rating=gBookReviews.json()['books'][0]['average_rating']
+        ratings_count=gBookReviews.json()['books'][0]['ratings_count']
+
+    return jsonify({
+                    'isbn': isbn,
+                    'title': lBook.title,
+                    'author': lBook.author,
+                    'year': lBook.year,
+                    'average_rating': average_rating,
+                    'ratings_count': ratings_count
+                })

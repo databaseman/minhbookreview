@@ -10,10 +10,10 @@
 
     <form action="{{url_for('book', isbn=header["isbn"])}}" method="post">
         <div class="form-group">
-            <input type="number" min="0" max="10" class="form-control" name="rating" placeholder="Rating 1 to 5" required>
+            <input type="number" min="0" max="5" class="form-control" name="rating" placeholder="Rating 1 to 5" required>
         </div>
         <div class="form-group">
-            <input type="text" class="form-control" name="review" placeholder="Review" required>
+            <input type="text" class="form-control" name="review" placeholder="Review" required >
         </div>
 
         <div class="row">
